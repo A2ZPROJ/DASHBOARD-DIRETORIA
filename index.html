@@ -227,7 +227,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
 
     <div class="dd-hd">
       <div style="display:flex;align-items:center;gap:12px;">
-        <img src="./logo-2s.png" alt="2S" style="height:32px;width:auto;object-fit:contain;flex-shrink:0;" />
+        <img src="./logo-2s.png" alt="2S" style="height:48px;width:auto;object-fit:contain;flex-shrink:0;" />
         <div class="dd-ht">Dashboard Diretoria — 2S Engenharia</div>
       </div>
       <div class="dd-hr">
@@ -882,13 +882,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     dd_charts = {};
   }
 
-  function buildCharts(){
+  function buildCharts(list){
     if (typeof Chart === 'undefined') return;
+    const data = (list && list.length) ? list : dd_ALL;
     const C = {g:'#22c55e', a:'#f59e0b', gr:'#475569', gc:'rgba(255,255,255,.06)', tc:'#7d8590'};
-    const fin  = SVC_DD.map(s=>dd_ALL.filter(m=>m.svc[s.key].st==='Finalizado').length);
-    const exec = SVC_DD.map(s=>dd_ALL.filter(m=>m.svc[s.key].st==='Em Execução').length);
-    const aex  = SVC_DD.map(s=>dd_ALL.filter(m=>m.svc[s.key].st==='A Executar').length);
-    const pcts = SVC_DD.map((s,i)=>dd_ALL.length>0?Math.round(fin[i]/dd_ALL.length*100):0);
+    const fin  = SVC_DD.map(s=>data.filter(m=>m.svc[s.key].st==='Finalizado').length);
+    const exec = SVC_DD.map(s=>data.filter(m=>m.svc[s.key].st==='Em Execução').length);
+    const aex  = SVC_DD.map(s=>data.filter(m=>m.svc[s.key].st==='A Executar').length);
+    const pcts = SVC_DD.map((s,i)=>data.length>0?Math.round(fin[i]/data.length*100):0);
     const labs = SVC_DD.map(s=>s.sh);
     const c1 = document.getElementById('dd-cst');
     if (c1) dd_charts.s = new Chart(c1,{
@@ -1063,6 +1064,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     const f = getFiltered();
     renderExecBanner(f);
     renderKPI(f);
+    destroyCharts();
+    buildCharts(f);
     renderTable(f);
     if (dd_geoLayer) styleLayer();
     renderCalendar();
@@ -1078,7 +1081,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     if (fbar) fbar.style.display = 'flex';
     const f = getFiltered();
     renderExecBanner(f);
-    renderKPI(f); buildCharts(); renderTable(f);
+    renderKPI(f); buildCharts(f); renderTable(f);
     initMap();
     // wire dynamic buttons
     document.querySelectorAll('#tab-diretoria [data-ddtile]').forEach(b=>{
