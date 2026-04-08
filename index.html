@@ -93,6 +93,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     #tab-diretoria .dd-exec-list li b{color:var(--dd-mu);font-weight:500;}
     #tab-diretoria .dd-exec-bar2{height:6px;border-radius:3px;background:var(--dd-bd);margin-top:8px;overflow:hidden;}
     #tab-diretoria .dd-exec-bar2 > div{height:100%;border-radius:3px;transition:width .8s;}
+    #tab-diretoria .dd-svc-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:13px;}
+    @media(max-width:1300px){#tab-diretoria .dd-svc-grid{grid-template-columns:repeat(3,1fr);}}
+    @media(max-width:700px){#tab-diretoria .dd-svc-grid{grid-template-columns:repeat(2,1fr);}}
+    #tab-diretoria .dd-svc-card{background:var(--dd-surface);border:1px solid var(--dd-bd);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;min-height:108px;}
+    #tab-diretoria .dd-svc-tt{font-size:10px;font-weight:700;color:var(--dd-mu);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    #tab-diretoria .dd-svc-pct{font-size:22px;font-weight:700;line-height:1.05;color:var(--dd-tx);}
+    #tab-diretoria .dd-svc-vals{font-size:10px;color:var(--dd-mu);}
+    #tab-diretoria .dd-svc-vals b{color:var(--dd-tx);font-weight:600;}
+    #tab-diretoria .dd-svc-bar{height:5px;border-radius:3px;background:var(--dd-bd);overflow:hidden;margin-top:auto;}
+    #tab-diretoria .dd-svc-bar > div{height:100%;border-radius:3px;transition:width .7s;}
     #tab-diretoria .dd-curvas-card{margin-bottom:13px;}
     #tab-diretoria .dd-curvas-card .dd-cw{height:240px;}
     #tab-diretoria .dd-curvas-msg{font-size:11px;color:var(--dd-mu);text-align:center;margin-top:8px;font-style:italic;}
@@ -630,6 +640,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
   function buildHTML(){
     return `
     <div id="dd-exec-bar" class="dd-exec-bar"></div>
+    <div id="dd-svc-grid" class="dd-svc-grid"></div>
     <div id="dd-kgrid" class="dd-kpi-grid"></div>
     <div class="dd-g2">
       <div class="dd-col">
@@ -704,6 +715,26 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
       </div>
       <div class="dd-tsc"><table class="dd-tbl" id="dd-tbl"><thead></thead><tbody></tbody></table></div>
     </div>`;
+  }
+
+  // ── MINI-CARDS POR SERVIÇO ──
+  function renderSvcGrid(list){
+    const el = document.getElementById('dd-svc-grid'); if (!el) return;
+    const data = (list && list.length) ? list : dd_ALL;
+    const SVC_COLORS = {topo:'#3b82f6', stream:'#06b6d4', sondT:'#a855f7', sondS:'#ec4899', projR:'#10b981', projE:'#f59e0b'};
+    el.innerHTML = SVC_DD.map(s => {
+      const pv = data.reduce((sum,m)=>sum+(Number(m.svc?.[s.key]?.pv)||0),0);
+      const re = data.reduce((sum,m)=>sum+(Number(m.svc?.[s.key]?.re)||0),0);
+      const pct = pv > 0 ? Math.min(100, Math.round(re/pv*100)) : 0;
+      const col = SVC_COLORS[s.key] || '#3b82f6';
+      const fmt = v => Number(v).toFixed(s.dec)+' '+s.unit;
+      return `<div class="dd-svc-card" style="border-left:3px solid ${col}">
+        <div class="dd-svc-tt" title="${s.lbl}">${s.lbl}</div>
+        <div class="dd-svc-pct" style="color:${col}">${pct}%</div>
+        <div class="dd-svc-vals"><b>${fmt(re)}</b> de <b>${fmt(pv)}</b></div>
+        <div class="dd-svc-bar"><div style="width:${pct}%;background:${col}"></div></div>
+      </div>`;
+    }).join('');
   }
 
   // ── BANNER EXECUTIVO (4 KPI grandes) ──
@@ -1154,6 +1185,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
   function applyF(){
     const f = getFiltered();
     renderExecBanner(f);
+    renderSvcGrid(f);
     renderKPI(f);
     destroyCharts();
     buildCharts(f);
@@ -1172,6 +1204,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     if (fbar) fbar.style.display = 'flex';
     const f = getFiltered();
     renderExecBanner(f);
+    renderSvcGrid(f);
     renderKPI(f); buildCharts(f); renderTable(f);
     initMap();
     // wire dynamic buttons
