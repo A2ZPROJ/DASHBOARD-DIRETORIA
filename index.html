@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Diretoria — 2S Engenharia</title>
+<meta name="description" content="Dashboard de acompanhamento de serviços em tempo real — 2S Engenharia">
+<meta property="og:title" content="Dashboard Diretoria — 2S Engenharia">
+<meta property="og:description" content="Acompanhamento de serviços em tempo real">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="2S Engenharia">
+<meta property="og:image" content="https://a2zproj.github.io/DASHBOARD-DIRETORIA/logo-2s.png">
+<meta property="og:url" content="https://a2zproj.github.io/DASHBOARD-DIRETORIA/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dashboard Diretoria — 2S Engenharia">
+<meta name="twitter:description" content="Acompanhamento de serviços em tempo real">
+<meta name="twitter:image" content="https://a2zproj.github.io/DASHBOARD-DIRETORIA/logo-2s.png">
+<link rel="icon" type="image/png" href="logo-2s.png">
 <link rel="icon" href="./logo-2s.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -156,15 +168,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     #tab-diretoria .dd-cal-btn{background:var(--dd-sf2);border:1px solid var(--dd-bd2);color:var(--dd-tx);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;}
     #tab-diretoria .dd-cal-btn:hover{background:var(--dd-sf3);}
     #tab-diretoria .dd-cal-title{font-size:13px;font-weight:600;min-width:130px;text-align:center;color:var(--dd-tx);}
-    #tab-diretoria .dd-cal-leg{display:flex;flex-wrap:wrap;gap:12px;font-size:10px;color:var(--dd-mu);margin-bottom:12px;}
-    #tab-diretoria .dd-cal-leg span{display:flex;align-items:center;gap:4px;}
-    #tab-diretoria .dd-cal-leg svg{width:14px;height:14px;}
+    #tab-diretoria .dd-cal-leg{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--dd-tx);margin-bottom:14px;}
+    #tab-diretoria .dd-cal-leg span{display:flex;align-items:center;gap:6px;}
+    #tab-diretoria .dd-cal-leg svg{width:18px;height:18px;}
     #tab-diretoria .dd-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-    #tab-diretoria .dd-cal-dow{font-size:10px;color:var(--dd-mu);text-align:center;padding:4px 0;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
-    #tab-diretoria .dd-cal-grid{grid-auto-rows:minmax(110px,auto);}
-    #tab-diretoria .dd-cal-cell{background:var(--dd-sf2);border:1px solid var(--dd-bd);border-radius:6px;min-height:110px;padding:5px 6px;display:flex;flex-direction:column;gap:2px;cursor:pointer;transition:background .15s;overflow:visible;}
-    #tab-diretoria .dd-cal-line{display:flex;align-items:center;gap:3px;font-size:9px;line-height:1.15;color:var(--dd-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    #tab-diretoria .dd-cal-line svg{width:11px;height:11px;flex-shrink:0;}
+    #tab-diretoria .dd-cal-dow{font-size:13px;color:var(--dd-mu);text-align:center;padding:6px 0;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+    #tab-diretoria .dd-cal-grid{grid-auto-rows:minmax(140px,auto);}
+    #tab-diretoria .dd-cal-cell{background:var(--dd-sf2);border:1px solid var(--dd-bd);border-radius:7px;min-height:140px;padding:7px 8px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:background .15s;overflow:visible;}
+    #tab-diretoria .dd-cal-line{display:flex;align-items:center;gap:5px;font-size:12px;line-height:1.25;color:var(--dd-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    #tab-diretoria .dd-cal-line svg{width:15px;height:15px;flex-shrink:0;}
     #tab-diretoria .dd-cal-line span{overflow:hidden;text-overflow:ellipsis;}
     #tab-diretoria .dd-cal-rain span{color:#60a5fa;font-weight:600;}
     /* Cores por status da entrega */
@@ -177,7 +189,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     #tab-diretoria .dd-cal-cell:hover{background:var(--dd-sf3);}
     #tab-diretoria .dd-cal-cell.dd-cal-other{opacity:.35;}
     #tab-diretoria .dd-cal-cell.dd-cal-today{border-color:var(--dd-blue);}
-    #tab-diretoria .dd-cal-day{font-size:11px;font-weight:600;color:var(--dd-tx);}
+    #tab-diretoria .dd-cal-day{font-size:14px;font-weight:700;color:var(--dd-tx);}
     #tab-diretoria .dd-cal-icons{display:flex;gap:3px;flex-wrap:wrap;margin-top:auto;}
     #tab-diretoria .dd-cal-icons svg{width:14px;height:14px;}
     #tab-diretoria .dd-cal-empty{font-size:10px;color:var(--dd-mu);text-align:center;margin-top:8px;}
