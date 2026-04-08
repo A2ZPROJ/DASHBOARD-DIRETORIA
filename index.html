@@ -188,6 +188,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     #tab-diretoria .dd-cal-ent-future  span{color:var(--dd-tx);}
     #tab-diretoria .dd-cal-cell:hover{background:var(--dd-sf3);}
     #tab-diretoria .dd-cal-cell.dd-cal-other{opacity:.35;}
+    #tab-diretoria .dd-cal-cell.dd-cal-sat{background:var(--dd-abg);border-color:var(--dd-amber);}
+    #tab-diretoria .dd-cal-cell.dd-cal-sat .dd-cal-day{color:var(--dd-atx);}
+    #tab-diretoria .dd-cal-cell.dd-cal-sun{background:var(--dd-rbg);border-color:var(--dd-red);}
+    #tab-diretoria .dd-cal-cell.dd-cal-sun .dd-cal-day{color:var(--dd-rtx);}
     #tab-diretoria .dd-cal-cell.dd-cal-today{border-color:var(--dd-blue);}
     #tab-diretoria .dd-cal-day{font-size:14px;font-weight:700;color:var(--dd-tx);}
     #tab-diretoria .dd-cal-icons{display:flex;gap:3px;flex-wrap:wrap;margin-top:auto;}
@@ -334,6 +338,28 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
   let dd_calMonth = (function(){ const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
   let dd_munCoords = {};
   let dd_rainCache = {}; // 'YYYY-MM' -> { mun -> { 'YYYY-MM-DD': mm } }
+  let dd_holidays = {};  // 'YYYY-MM-DD' -> nome
+  let dd_holidaysLoaded = new Set();
+
+  async function dd_loadHolidays(year){
+    if (dd_holidaysLoaded.has(year)) return;
+    dd_holidaysLoaded.add(year);
+    try {
+      const cacheKey = 'dd_holidays_' + year;
+      let raw = null;
+      try { raw = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(_){}
+      const fresh = raw && (Date.now() - raw.ts) < 30*24*60*60*1000;
+      let list;
+      if (fresh) list = raw.data;
+      else {
+        const r = await fetch('https://brasilapi.com.br/api/feriados/v1/' + year);
+        if (!r.ok) throw new Error(r.status);
+        list = await r.json();
+        try { localStorage.setItem(cacheKey, JSON.stringify({ts: Date.now(), data: list})); } catch(_){}
+      }
+      list.forEach(h => { dd_holidays[h.date] = h.name; });
+    } catch(e) {}
+  }
   let dd_entregas = [];
 
   const DD_ICONS = {
@@ -499,9 +525,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
       const isOther = cur.getMonth() !== (month-1);
       const isToday = dd_dkey(cur) === todayKey;
       const dKey = dd_dkey(cur);
+      const dow = cur.getDay();
+      const isSat = dow === 6;
+      const isSun = dow === 0;
+      const holiday = dd_holidays && dd_holidays[dKey];
 
       const classes = ['dd-cal-cell'];
       if (isOther) classes.push('dd-cal-other');
+      if (isSat) classes.push('dd-cal-sat');
+      if (isSun || holiday) classes.push('dd-cal-sun');
       if (isToday) classes.push('dd-cal-today');
 
       // Chuva: filtra um dia que pertença ao mês corrente do cache
@@ -527,6 +559,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
       } else if (rainIco) {
         rainLine = `<div class="dd-cal-line dd-cal-rain">${rainIco}</div>`;
       }
+      if (holiday) tipParts.unshift('Feriado: ' + holiday);
 
       // Linhas de entregas (ícone + tipo: descrição)
       let entLines = '';
@@ -552,6 +585,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     const y = dd_calMonth.getFullYear();
     const m = dd_calMonth.getMonth()+1;
     const key = y+'-'+dd_pad(m);
+    dd_loadHolidays(y).then(()=>renderCalendar());
     if (!dd_rainCache[key]) {
       renderCalendar(); // render imediato sem chuva
       await fetchRain(y, m);
@@ -938,32 +972,37 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
       return;
     }
 
-    // Modo geral (vários municípios): contagem por status
-    if (cttSt) cttSt.textContent = 'Status por Serviço — municípios';
+    // Modo geral (vários municípios): TOTAL Previsto vs Realizado por serviço
+    if (cttSt) cttSt.textContent = 'Previsto × Realizado — Total (' + data.length + ' municípios)';
     if (cttPg) cttPg.textContent = 'Avanço por Serviço (%)';
-    const fin  = SVC_DD.map(s=>data.filter(m=>m.svc[s.key].st==='Finalizado').length);
-    const exec = SVC_DD.map(s=>data.filter(m=>m.svc[s.key].st==='Em Execução').length);
-    const aex  = SVC_DD.map(s=>data.filter(m=>m.svc[s.key].st==='A Executar').length);
-    const pcts = SVC_DD.map((s,i)=>data.length>0?Math.round(fin[i]/data.length*100):0);
+    const pvT = SVC_DD.map(s => data.reduce((sum,m)=> sum + (Number(m.svc[s.key]?.pv)||0), 0));
+    const reT = SVC_DD.map(s => data.reduce((sum,m)=> sum + (Number(m.svc[s.key]?.re)||0), 0));
+    const pctsT = SVC_DD.map((s,i)=> pvT[i]>0 ? Math.min(100, Math.round(reT[i]/pvT[i]*100)) : 0);
     if (c1) dd_charts.s = new Chart(c1,{
       type:'bar',
       data:{labels:labs,datasets:[
-        {label:'Finalizado',  data:fin,  backgroundColor:C.g,  borderRadius:3,borderSkipped:false},
-        {label:'Em Execução', data:exec, backgroundColor:C.a,  borderRadius:3,borderSkipped:false},
-        {label:'A Executar',  data:aex,  backgroundColor:C.gr, borderRadius:3,borderSkipped:false},
+        {label:'Previsto',  data:pvT, backgroundColor:C.blue, borderRadius:3, borderSkipped:false},
+        {label:'Realizado', data:reT, backgroundColor:C.g,    borderRadius:3, borderSkipped:false},
       ]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+        plugins:{legend:{display:true,labels:{color:C.tc,font:{size:11}}},
+                 tooltip:{mode:'index',intersect:false,callbacks:{
+                   label: ctx => ` ${ctx.dataset.label}: ${dd_fmtVal(ctx.parsed.y, SVC_DD[ctx.dataIndex])}`
+                 }}},
         scales:{x:{ticks:{color:C.tc,font:{size:10},maxRotation:0},grid:{color:C.gc}},
-                y:{ticks:{color:C.tc,font:{size:10},stepSize:5},grid:{color:C.gc}}}}
+                y:{ticks:{color:C.tc,font:{size:10}},grid:{color:C.gc}}}}
     });
     if (c2) dd_charts.p = new Chart(c2,{
       type:'bar',
-      data:{labels:labs,datasets:[{label:'% Concluído',data:pcts,
-        backgroundColor:pcts.map(v=>v>=80?C.g:v>=40?C.blue:C.a),
+      data:{labels:labs,datasets:[{label:'% Concluído',data:pctsT,
+        backgroundColor:pctsT.map(v=>v>=80?C.g:v>=40?C.blue:C.a),
         borderRadius:4,borderSkipped:false}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.x+'%'}}},
+        plugins:{legend:{display:false},
+                 tooltip:{callbacks:{label:ctx=>{
+                   const i=ctx.dataIndex, s=SVC_DD[i];
+                   return ` ${ctx.parsed.x}%  (${dd_fmtVal(reT[i],s)} / ${dd_fmtVal(pvT[i],s)})`;
+                 }}}},
         scales:{x:{min:0,max:100,ticks:{color:C.tc,font:{size:10},callback:v=>v+'%'},grid:{color:C.gc}},
                 y:{ticks:{color:C.tc,font:{size:10}},grid:{display:false}}}}
     });
