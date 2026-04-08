@@ -583,11 +583,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
   function buildHTML(){
     return `
     <div id="dd-exec-bar" class="dd-exec-bar"></div>
-    <div class="dd-card dd-curvas-card">
-      <div class="dd-ctt">Curva S — Avanço Acumulado (Realizado vs Planejado)</div>
-      <div class="dd-cw"><canvas id="dd-curvas"></canvas></div>
-      <div class="dd-curvas-msg" id="dd-curvas-msg"></div>
-    </div>
     <div id="dd-kgrid" class="dd-kpi-grid"></div>
     <div class="dd-g2">
       <div class="dd-col">
@@ -1591,7 +1586,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     const pdfCollectOpts = () => ({
       capa: true,
       sumario:   document.getElementById('dd-pdf-s-sumario').checked,
-      curvaS:    document.getElementById('dd-pdf-s-curvas').checked,
+      curvaS:    false,
       mapa:      document.getElementById('dd-pdf-s-mapa').checked,
       tabela:    document.getElementById('dd-pdf-s-tabela').checked,
       proximas:  document.getElementById('dd-pdf-s-proximas').checked,
@@ -1684,7 +1679,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
         dd_entregas = data.entregas || [];
         updateStamp(data);
         if (wasEmpty) renderAll();
-        else { applyF(); loadAndRenderCurvaS(); }
+        else { applyF(); }
       } catch(e){
         if (!dd_ALL.length) showError(e.message);
       }
