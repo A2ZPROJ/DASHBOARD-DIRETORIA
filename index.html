@@ -234,6 +234,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
         <div>
           <div class="dd-ui"><span class="dd-upd-dot"></span><span id="dd-lupd">Aguardando dados...</span></div>
         </div>
+        <button class="dd-bfile" id="dd-themeBtn" title="Alternar tema claro/escuro">🌙 Tema</button>
         <button class="dd-bfile" id="dd-pdfBtn" title="Gerar PDF Executivo do estado atual">📄 Exportar PDF</button>
         </div>
     </div>
@@ -885,13 +886,62 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
   function buildCharts(list){
     if (typeof Chart === 'undefined') return;
     const data = (list && list.length) ? list : dd_ALL;
-    const C = {g:'#22c55e', a:'#f59e0b', gr:'#475569', gc:'rgba(255,255,255,.06)', tc:'#7d8590'};
+    const isLight = (document.documentElement.getAttribute('data-theme') === 'light');
+    const C = {
+      g:'#22c55e', a:'#f59e0b', gr: isLight ? '#94a3b8' : '#475569',
+      gc: isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.06)',
+      tc: isLight ? '#475569' : '#7d8590',
+      blue:'#3b82f6'
+    };
+    const labs = SVC_DD.map(s=>s.sh);
+    const c1 = document.getElementById('dd-cst');
+    const c2 = document.getElementById('dd-cpg');
+    const cttSt = document.querySelector('#tab-diretoria #dd-cst')?.closest('.dd-card')?.querySelector('.dd-ctt');
+    const cttPg = document.querySelector('#tab-diretoria #dd-cpg')?.closest('.dd-card')?.querySelector('.dd-ctt');
+
+    // Modo município único: mostra Previsto vs Realizado
+    if (data.length === 1) {
+      const m = data[0];
+      const pv = SVC_DD.map(s => (m.svc[s.key]?.pv ?? 0));
+      const re = SVC_DD.map(s => (m.svc[s.key]?.re ?? 0));
+      const pct = SVC_DD.map(s => (m.svc[s.key]?.pct ?? 0));
+      if (cttSt) cttSt.textContent = `Previsto × Realizado — ${m.mun}`;
+      if (cttPg) cttPg.textContent = `Avanço por Serviço (%) — ${m.mun}`;
+      if (c1) dd_charts.s = new Chart(c1, {
+        type:'bar',
+        data:{labels:labs,datasets:[
+          {label:'Previsto',  data:pv, backgroundColor:C.blue, borderRadius:3, borderSkipped:false},
+          {label:'Realizado', data:re, backgroundColor:C.g,    borderRadius:3, borderSkipped:false},
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:true,labels:{color:C.tc,font:{size:11}}},
+                   tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}`}}},
+          scales:{x:{ticks:{color:C.tc,font:{size:10},maxRotation:0},grid:{color:C.gc}},
+                  y:{ticks:{color:C.tc,font:{size:10}},grid:{color:C.gc}}}}
+      });
+      if (c2) dd_charts.p = new Chart(c2, {
+        type:'bar',
+        data:{labels:labs,datasets:[{label:'% Concluído', data: pct,
+          backgroundColor: pct.map(v=>v>=80?C.g:v>=40?C.blue:C.a),
+          borderRadius:4,borderSkipped:false}]},
+        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},
+                   tooltip:{callbacks:{label:ctx=>{
+                     const i=ctx.dataIndex; return ` ${ctx.parsed.x}%  (${re[i]} / ${pv[i]})`;
+                   }}}},
+          scales:{x:{min:0,max:100,ticks:{color:C.tc,font:{size:10},callback:v=>v+'%'},grid:{color:C.gc}},
+                  y:{ticks:{color:C.tc,font:{size:10}},grid:{display:false}}}}
+      });
+      return;
+    }
+
+    // Modo geral (vários municípios): contagem por status
+    if (cttSt) cttSt.textContent = 'Status por Serviço — municípios';
+    if (cttPg) cttPg.textContent = 'Avanço por Serviço (%)';
     const fin  = SVC_DD.map(s=>data.filter(m=>m.svc[s.key].st==='Finalizado').length);
     const exec = SVC_DD.map(s=>data.filter(m=>m.svc[s.key].st==='Em Execução').length);
     const aex  = SVC_DD.map(s=>data.filter(m=>m.svc[s.key].st==='A Executar').length);
     const pcts = SVC_DD.map((s,i)=>data.length>0?Math.round(fin[i]/data.length*100):0);
-    const labs = SVC_DD.map(s=>s.sh);
-    const c1 = document.getElementById('dd-cst');
     if (c1) dd_charts.s = new Chart(c1,{
       type:'bar',
       data:{labels:labs,datasets:[
@@ -904,11 +954,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
         scales:{x:{ticks:{color:C.tc,font:{size:10},maxRotation:0},grid:{color:C.gc}},
                 y:{ticks:{color:C.tc,font:{size:10},stepSize:5},grid:{color:C.gc}}}}
     });
-    const c2 = document.getElementById('dd-cpg');
     if (c2) dd_charts.p = new Chart(c2,{
       type:'bar',
       data:{labels:labs,datasets:[{label:'% Concluído',data:pcts,
-        backgroundColor:pcts.map(v=>v>=80?C.g:v>=40?'#3b82f6':C.a),
+        backgroundColor:pcts.map(v=>v>=80?C.g:v>=40?C.blue:C.a),
         borderRadius:4,borderSkipped:false}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.x+'%'}}},
@@ -1542,9 +1591,33 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     pdf.save('Dashboard_Executivo_'+fileDate+'.pdf');
   }
 
+  // Tema persistente (light/dark) — antes do init
+  (function(){
+    const saved = localStorage.getItem('dd_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+
   window.ddashInit = async function(){
     if (window._ddashInited) return;
     window._ddashInited = true;
+
+    // Botão de troca de tema
+    const themeBtn = document.getElementById('dd-themeBtn');
+    function updateThemeBtn(){
+      const t = document.documentElement.getAttribute('data-theme') || 'dark';
+      if (themeBtn) themeBtn.innerHTML = t === 'dark' ? '☀️ Modo Claro' : '🌙 Modo Escuro';
+    }
+    updateThemeBtn();
+    if (themeBtn) themeBtn.addEventListener('click', ()=>{
+      const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('dd_theme', next);
+      updateThemeBtn();
+      // Re-render charts pra pegar novas cores de eixo
+      destroyCharts();
+      buildCharts(getFiltered());
+    });
 
     // Sincroniza tile inicial com tema atual + marca botão ativo
     dd_curTile = dd_themeTile();
