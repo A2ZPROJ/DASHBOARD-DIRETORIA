@@ -321,12 +321,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
   const SUPA_URL='https://xszpzsmdpbgaiodeqcpi.supabase.co';
   const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzenB6c21kcGJnYWlvZGVxY3BpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMTI5ODYsImV4cCI6MjA4OTg4ODk4Nn0.Wv_tcovD5nc13tmrfkgsVb6M6tS-CC7q6HVjphpzTrQ';
   const SVC_DD = [
-    {key:'topo',  lbl:'Topografia',       sh:'Topografia',      cs:4,  cp:5,  cr:6,  unit:'km', dec:2},
-    {key:'stream',lbl:'Stream DP',         sh:'Stream DP',       cs:10, cp:11, cr:12, unit:'km', dec:2},
-    {key:'sondT', lbl:'Sondagem Trado',    sh:'Sond. Trado',     cs:16, cp:17, cr:18, unit:'m',  dec:2},
-    {key:'sondS', lbl:'Sondagem SPT',      sh:'Sond. SPT',       cs:22, cp:23, cr:24, unit:'m',  dec:2},
-    {key:'projR', lbl:'Proj. Exec. Redes', sh:'Proj. Ex. Redes', cs:29, cp:30, cr:31, unit:'m',  dec:2},
-    {key:'projE', lbl:'Proj. Exec. EEE',   sh:'Proj. Ex. EEE',   cs:35, cp:36, cr:37, unit:'un', dec:0},
+    {key:'topo',  lbl:'Topografia',       sh:'Topografia',      cs:4,  cp:6,  cr:5,  unit:'km', dec:2},
+    {key:'stream',lbl:'Stream DP',         sh:'Stream DP',       cs:10, cp:12, cr:11, unit:'km', dec:2},
+    {key:'sondT', lbl:'Sondagem Trado',    sh:'Sond. Trado',     cs:16, cp:18, cr:17, unit:'m',  dec:2},
+    {key:'sondS', lbl:'Sondagem SPT',      sh:'Sond. SPT',       cs:22, cp:24, cr:23, unit:'m',  dec:2},
+    {key:'projR', lbl:'Proj. Exec. Redes', sh:'Proj. Ex. Redes', cs:29, cp:31, cr:30, unit:'m',  dec:2},
+    {key:'projE', lbl:'Proj. Exec. EEE',   sh:'Proj. Ex. EEE',   cs:35, cp:37, cr:36, unit:'un', dec:0},
   ];
   const dd_fmtVal = (v, s) => (v == null) ? '—' : (Number(v).toFixed(s.dec) + ' ' + s.unit);
   const TILES_DD = {
