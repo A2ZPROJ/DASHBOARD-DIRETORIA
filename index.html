@@ -1004,10 +1004,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
           scales:{x:{ticks:{color:C.tc,font:{size:10},maxRotation:0},grid:{color:C.gc}},
                   y:{ticks:{color:C.tc,font:{size:10}},grid:{color:C.gc}}}}
       });
+      const pctReal = SVC_DD.map(s => { const sv = m.svc[s.key]; return (sv && sv.pv > 0) ? Math.round(sv.re/sv.pv*100) : 0; });
+      const xMax = Math.max(100, Math.ceil(Math.max(...pctReal,100) / 50) * 50);
       if (c2) dd_charts.p = new Chart(c2, {
         type:'bar',
-        data:{labels:labs,datasets:[{label:'% Concluído', data: pct,
-          backgroundColor: pct.map(v=>v>=80?C.g:v>=40?C.blue:C.a),
+        data:{labels:labs,datasets:[{label:'% Concluído', data: pctReal,
+          backgroundColor: pctReal.map(v=>v>=100?C.g:v>=40?C.blue:C.a),
           borderRadius:4,borderSkipped:false}]},
         options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:false},
@@ -1015,7 +1017,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
                      const i=ctx.dataIndex, s=SVC_DD[i];
                      return ` ${ctx.parsed.x}%  (${dd_fmtVal(re[i],s)} / ${dd_fmtVal(pv[i],s)})`;
                    }}}},
-          scales:{x:{min:0,max:100,ticks:{color:C.tc,font:{size:10},callback:v=>v+'%'},grid:{color:C.gc}},
+          scales:{x:{min:0,max:xMax,ticks:{color:C.tc,font:{size:10},callback:v=>v+'%'},grid:{color:C.gc}},
                   y:{ticks:{color:C.tc,font:{size:10}},grid:{display:false}}}}
       });
       return;
@@ -1026,7 +1028,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     if (cttPg) cttPg.textContent = 'Avanço por Serviço (%)';
     const pvT = SVC_DD.map(s => data.reduce((sum,m)=> sum + (Number(m.svc[s.key]?.pv)||0), 0));
     const reT = SVC_DD.map(s => data.reduce((sum,m)=> sum + (Number(m.svc[s.key]?.re)||0), 0));
-    const pctsT = SVC_DD.map((s,i)=> pvT[i]>0 ? Math.min(100, Math.round(reT[i]/pvT[i]*100)) : 0);
+    const pctsT = SVC_DD.map((s,i)=> pvT[i]>0 ? Math.round(reT[i]/pvT[i]*100) : 0);
+    const xMaxT = Math.max(100, Math.ceil(Math.max(...pctsT,100) / 50) * 50);
     if (c1) dd_charts.s = new Chart(c1,{
       type:'bar',
       data:{labels:labs,datasets:[
@@ -1044,7 +1047,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     if (c2) dd_charts.p = new Chart(c2,{
       type:'bar',
       data:{labels:labs,datasets:[{label:'% Concluído',data:pctsT,
-        backgroundColor:pctsT.map(v=>v>=80?C.g:v>=40?C.blue:C.a),
+        backgroundColor:pctsT.map(v=>v>=100?C.g:v>=40?C.blue:C.a),
         borderRadius:4,borderSkipped:false}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},
@@ -1052,7 +1055,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
                    const i=ctx.dataIndex, s=SVC_DD[i];
                    return ` ${ctx.parsed.x}%  (${dd_fmtVal(reT[i],s)} / ${dd_fmtVal(pvT[i],s)})`;
                  }}}},
-        scales:{x:{min:0,max:100,ticks:{color:C.tc,font:{size:10},callback:v=>v+'%'},grid:{color:C.gc}},
+        scales:{x:{min:0,max:xMaxT,ticks:{color:C.tc,font:{size:10},callback:v=>v+'%'},grid:{color:C.gc}},
                 y:{ticks:{color:C.tc,font:{size:10}},grid:{display:false}}}}
     });
   }
