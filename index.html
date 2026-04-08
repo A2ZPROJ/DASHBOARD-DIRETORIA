@@ -96,13 +96,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     #tab-diretoria .dd-svc-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:13px;}
     @media(max-width:1300px){#tab-diretoria .dd-svc-grid{grid-template-columns:repeat(3,1fr);}}
     @media(max-width:700px){#tab-diretoria .dd-svc-grid{grid-template-columns:repeat(2,1fr);}}
-    #tab-diretoria .dd-svc-card{background:var(--dd-surface);border:1px solid var(--dd-bd);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;min-height:108px;}
+    #tab-diretoria .dd-svc-card{background:var(--dd-surface);border:1px solid var(--dd-bd);border-radius:8px;padding:10px 12px 8px;display:flex;flex-direction:column;gap:4px;min-height:160px;}
     #tab-diretoria .dd-svc-tt{font-size:10px;font-weight:700;color:var(--dd-mu);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    #tab-diretoria .dd-svc-pct{font-size:22px;font-weight:700;line-height:1.05;color:var(--dd-tx);}
-    #tab-diretoria .dd-svc-vals{font-size:10px;color:var(--dd-mu);}
+    #tab-diretoria .dd-svc-cw{position:relative;flex:1;min-height:100px;}
+    #tab-diretoria .dd-svc-vals{font-size:10px;color:var(--dd-mu);text-align:center;}
     #tab-diretoria .dd-svc-vals b{color:var(--dd-tx);font-weight:600;}
-    #tab-diretoria .dd-svc-bar{height:5px;border-radius:3px;background:var(--dd-bd);overflow:hidden;margin-top:auto;}
-    #tab-diretoria .dd-svc-bar > div{height:100%;border-radius:3px;transition:width .7s;}
     #tab-diretoria .dd-curvas-card{margin-bottom:13px;}
     #tab-diretoria .dd-curvas-card .dd-cw{height:240px;}
     #tab-diretoria .dd-curvas-msg{font-size:11px;color:var(--dd-mu);text-align:center;margin-top:8px;font-style:italic;}
@@ -717,24 +715,53 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     </div>`;
   }
 
-  // ── MINI-CARDS POR SERVIÇO ──
+  // ── MINI-GRÁFICOS POR SERVIÇO (Previsto vs Realizado) ──
+  let dd_svcCharts = {};
+  function destroySvcCharts(){
+    Object.values(dd_svcCharts).forEach(c=>{try{c.destroy();}catch(e){}});
+    dd_svcCharts = {};
+  }
   function renderSvcGrid(list){
     const el = document.getElementById('dd-svc-grid'); if (!el) return;
+    if (typeof Chart === 'undefined') return;
+    destroySvcCharts();
     const data = (list && list.length) ? list : dd_ALL;
+    const isLight = (document.documentElement.getAttribute('data-theme') === 'light');
+    const tc = isLight ? '#475569' : '#7d8590';
+    const gc = isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.06)';
     const SVC_COLORS = {topo:'#3b82f6', stream:'#06b6d4', sondT:'#a855f7', sondS:'#ec4899', projR:'#10b981', projE:'#f59e0b'};
-    el.innerHTML = SVC_DD.map(s => {
-      const pv = data.reduce((sum,m)=>sum+(Number(m.svc?.[s.key]?.pv)||0),0);
-      const re = data.reduce((sum,m)=>sum+(Number(m.svc?.[s.key]?.re)||0),0);
-      const pct = pv > 0 ? Math.min(100, Math.round(re/pv*100)) : 0;
+    el.innerHTML = SVC_DD.map((s,i) => {
       const col = SVC_COLORS[s.key] || '#3b82f6';
-      const fmt = v => Number(v).toFixed(s.dec)+' '+s.unit;
       return `<div class="dd-svc-card" style="border-left:3px solid ${col}">
         <div class="dd-svc-tt" title="${s.lbl}">${s.lbl}</div>
-        <div class="dd-svc-pct" style="color:${col}">${pct}%</div>
-        <div class="dd-svc-vals"><b>${fmt(re)}</b> de <b>${fmt(pv)}</b></div>
-        <div class="dd-svc-bar"><div style="width:${pct}%;background:${col}"></div></div>
+        <div class="dd-svc-cw"><canvas id="dd-svc-c${i}"></canvas></div>
+        <div class="dd-svc-vals" id="dd-svc-v${i}"></div>
       </div>`;
     }).join('');
+    SVC_DD.forEach((s,i) => {
+      const cv = document.getElementById('dd-svc-c'+i); if (!cv) return;
+      const pv = data.reduce((sum,m)=>sum+(Number(m.svc?.[s.key]?.pv)||0),0);
+      const re = data.reduce((sum,m)=>sum+(Number(m.svc?.[s.key]?.re)||0),0);
+      const col = SVC_COLORS[s.key] || '#3b82f6';
+      const fmt = v => Number(v).toFixed(s.dec)+' '+s.unit;
+      const valsEl = document.getElementById('dd-svc-v'+i);
+      if (valsEl) valsEl.innerHTML = `<b>${fmt(re)}</b> / <b>${fmt(pv)}</b>`;
+      dd_svcCharts[s.key] = new Chart(cv, {
+        type:'bar',
+        data:{labels:['Previsto','Realizado'],datasets:[{
+          data:[pv,re],
+          backgroundColor:['#3b82f6', col === '#3b82f6' ? '#10b981' : col],
+          borderRadius:4, borderSkipped:false
+        }]},
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},
+                   tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${fmt(ctx.parsed.y)}`}}},
+          scales:{
+            x:{ticks:{color:tc,font:{size:9}},grid:{display:false}},
+            y:{ticks:{color:tc,font:{size:9}},grid:{color:gc}, beginAtZero:true}
+          }}
+      });
+    });
   }
 
   // ── BANNER EXECUTIVO (4 KPI grandes) ──
