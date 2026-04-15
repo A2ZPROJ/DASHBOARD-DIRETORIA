@@ -338,7 +338,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
   };
   function dd_themeTile(){ return (document.documentElement.getAttribute('data-theme') === 'light') ? 'light' : 'dark'; }
 
-  let dd_ALL = [], dd_curMun = '', dd_curSt = 'all', dd_tblF = 'all';
+  let dd_ALL = [], dd_curMun = '', dd_curSeq = '', dd_curSt = 'all', dd_tblF = 'all';
   let dd_charts = {}, dd_curTile = dd_themeTile();
   let dd_lmap = null, dd_tileL = null, dd_geoLayer = null, dd_geoData = null;
 
@@ -614,7 +614,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
 
   function getFiltered(){
     let l = dd_ALL;
-    if (dd_curMun) l = l.filter(m=>m.mun===dd_curMun);
+    if (dd_curSeq) {
+      l = l.filter(m=>String(m.seq)===String(dd_curSeq));
+    } else if (dd_curMun) {
+      l = l.filter(m=>m.mun===dd_curMun && !String(m.seq).includes('.'));
+    } else {
+      l = l.filter(m=>!String(m.seq).includes('.'));
+    }
     if (dd_curSt !== 'all') l = l.filter(m=>SVC_DD.some(s=>{
       const st = m.svc[s.key].st;
       if (dd_curSt==='finalizado') return st==='Finalizado';
@@ -630,7 +636,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     s.innerHTML = '<option value="">Todos os municípios</option>';
     dd_ALL.forEach(m=>{
       const o = document.createElement('option');
-      o.value = m.mun; o.textContent = m.seq + '. ' + m.mun;
+      o.value = String(m.seq); o.textContent = m.seq + '. ' + m.mun;
       s.appendChild(o);
     });
   }
@@ -1082,7 +1088,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
       return `<div class="dd-pc"><div class="dd-pb"><div class="dd-pf" style="width:${sv.pct}%;background:${c}"></div></div><span class="dd-pp">${sv.pct}%</span></div>`;
     };
     tbl.querySelector('tbody').innerHTML = rows.map(m=>
-      `<tr class="${m.mun===dd_curMun?'hl':''}">
+      `<tr class="${String(m.seq)===String(dd_curSeq)?'hl':''}">
         <td class="dd-sq">${m.seq}</td><td class="dd-mn" title="${m.mun}">${m.mun}</td>
         ${SVC_DD.map(s=>'<td>'+badge(m.svc[s.key].st)+'</td>').join('')}
         <td>${prog(m.svc.topo)}</td><td>${prog(m.svc.projR)}</td>
@@ -1191,7 +1197,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
             mouseout(e){ dd_geoLayer.resetStyle(e.target); styleLayer(); tt.style.opacity = '0'; },
             click(){
               dd_curMun = m.mun;
-              const sel = document.getElementById('dd-msel'); if (sel) sel.value = m.mun;
+              dd_curSeq = String(m.seq);
+              const sel = document.getElementById('dd-msel'); if (sel) sel.value = String(m.seq);
               applyF();
               zoomToMun(m.mun);
             }
@@ -1240,7 +1247,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
       });
     });
     const rbtn = document.getElementById('dd-resetZoomBtn');
-    if (rbtn) rbtn.addEventListener('click',()=>{ dd_curMun=''; const s=document.getElementById('dd-msel'); if(s)s.value=''; applyF(); resetZoom(); });
+    if (rbtn) rbtn.addEventListener('click',()=>{ dd_curMun=''; dd_curSeq=''; const s=document.getElementById('dd-msel'); if(s)s.value=''; applyF(); resetZoom(); });
     const cprev = document.getElementById('dd-cal-prev');
     const cnext = document.getElementById('dd-cal-next');
     if (cprev) cprev.addEventListener('click',()=>onCalNav(-1));
@@ -1824,7 +1831,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     });
     const clrBtn = document.getElementById('dd-clrBtn');
     if (clrBtn) clrBtn.addEventListener('click', ()=>{
-      dd_curMun=''; dd_curSt='all';
+      dd_curMun=''; dd_curSeq=''; dd_curSt='all';
       const s=document.getElementById('dd-msel'); if(s)s.value='';
       document.querySelectorAll('#tab-diretoria [data-ddchip]').forEach(c=>c.classList.remove('on'));
       const all=document.querySelector('#tab-diretoria [data-ddchip="all"]'); if(all)all.classList.add('on');
@@ -1840,9 +1847,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     });
     const msel = document.getElementById('dd-msel');
     if (msel) msel.addEventListener('change', e=>{
-      dd_curMun = e.target.value;
+      dd_curSeq = e.target.value;
+      const sel = dd_curSeq ? dd_ALL.find(m=>String(m.seq)===dd_curSeq) : null;
+      let munName = sel ? sel.mun : '';
+      if (sel && String(sel.seq).includes('.')) {
+        const parentSeq = String(sel.seq).split('.')[0];
+        const parent = dd_ALL.find(m => String(m.seq) === parentSeq);
+        if (parent) munName = parent.mun;
+      }
+      dd_curMun = munName;
       applyF();
-      if (dd_curMun) zoomToMun(dd_curMun); else resetZoom();
+      if (munName) zoomToMun(munName); else resetZoom();
     });
 
     
