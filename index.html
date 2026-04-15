@@ -741,7 +741,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
       const col = SVC_COLORS[s.key] || '#3b82f6';
       const fmt = v => Number(v).toFixed(s.dec)+' '+s.unit;
       const valsEl = document.getElementById('dd-svc-v'+i);
-      if (valsEl) valsEl.innerHTML = `<span style="color:var(--dd-mu);font-size:9px">PREV.</span> <b>${fmt(pv)}</b> &nbsp;<span style="color:var(--dd-mu);font-size:9px">REAL.</span> <b>${fmt(re)}</b>`;
+      if (valsEl) valsEl.innerHTML = `<span style="color:var(--dd-mu);font-size:9px;text-transform:none">Prev.</span> <b>${fmt(pv)}</b> &nbsp;<span style="color:var(--dd-mu);font-size:9px;text-transform:none">Real.</span> <b>${fmt(re)}</b>`;
       dd_svcCharts[s.key] = new Chart(cv, {
         type:'bar',
         data:{labels:['Previsto','Realizado'],datasets:[{
