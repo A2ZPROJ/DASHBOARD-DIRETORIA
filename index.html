@@ -74,6 +74,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     #tab-diretoria .dd-fb{background:var(--dd-sf2);border-bottom:1px solid var(--dd-bd);padding:8px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
     #tab-diretoria .dd-fl{font-size:10px;color:var(--dd-mu);font-weight:600;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;}
     #tab-diretoria .dd-fs{background:var(--dd-sel-bg);border:1px solid var(--dd-bd2);color:var(--dd-tx);padding:5px 10px;border-radius:6px;font-size:12px;min-width:215px;cursor:pointer;outline:none;}
+    /* Custom dropdown de municípios (suporta negrito real nas opções) */
+    #tab-diretoria .dd-mun-cs{position:relative;min-width:240px;font-size:12px;}
+    #tab-diretoria .dd-mun-cs-btn{width:100%;background:var(--dd-sel-bg);border:1px solid var(--dd-bd2);color:var(--dd-tx);padding:5px 26px 5px 10px;border-radius:6px;font-size:12px;cursor:pointer;text-align:left;outline:none;}
+    #tab-diretoria .dd-mun-cs-btn::after{content:"▾";position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--dd-mu);font-size:10px;}
+    #tab-diretoria .dd-mun-cs-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:340px;overflow-y:auto;background:var(--dd-sel-bg);border:1px solid var(--dd-bd2);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:1000;}
+    #tab-diretoria .dd-mun-cs-panel.open{display:block;}
+    #tab-diretoria .dd-mun-cs-opt{padding:6px 12px;color:var(--dd-tx);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    #tab-diretoria .dd-mun-cs-opt:hover,#tab-diretoria .dd-mun-cs-opt.hl{background:var(--dd-tbl-hv);}
+    #tab-diretoria .dd-mun-cs-opt.is-mun{font-weight:700;}
+    #tab-diretoria .dd-mun-cs-opt.is-dist{font-weight:400;padding-left:24px;font-size:11px;color:var(--dd-mu);}
+    #tab-diretoria .dd-mun-cs-search{position:sticky;top:0;background:var(--dd-sel-bg);padding:6px;border-bottom:1px solid var(--dd-bd2);}
+    #tab-diretoria .dd-mun-cs-search input{width:100%;padding:4px 8px;font-size:11px;background:var(--dd-bg);border:1px solid var(--dd-bd2);color:var(--dd-tx);border-radius:4px;outline:none;}
     #tab-diretoria .dd-chips{display:flex;gap:5px;flex-wrap:wrap;}
     #tab-diretoria .dd-chip{background:transparent;border:1px solid var(--dd-bd);color:var(--dd-mu);padding:3px 10px;border-radius:10px;font-size:11px;cursor:pointer;}
     #tab-diretoria .dd-chip.on{border-color:var(--dd-blue);background:var(--dd-bbg);color:var(--dd-btx);}
@@ -253,7 +265,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
 
     <div class="dd-fb" id="dd-fbar" style="display:none">
       <span class="dd-fl">Município</span>
-      <select class="dd-fs" id="dd-msel"><option value="">Todos os municípios</option></select>
+      <div class="dd-mun-cs" id="dd-msel-cs">
+        <button type="button" class="dd-mun-cs-btn" id="dd-msel-btn">Todos os municípios</button>
+        <div class="dd-mun-cs-panel" id="dd-msel-panel"></div>
+      </div>
+      <select class="dd-fs" id="dd-msel" style="display:none"><option value="">Todos os municípios</option></select>
       <div class="dd-chips">
         <button class="dd-chip on" data-ddchip="all">Todos</button>
         <button class="dd-chip"    data-ddchip="execucao">Em Execução</button>
@@ -632,18 +648,74 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
 
   function buildSel(){
     const s = document.getElementById('dd-msel');
-    if (!s) return;
+    const panel = document.getElementById('dd-msel-panel');
+    if (!s || !panel) return;
+    // Popula select hidden (mantém compat)
     s.innerHTML = '<option value="">Todos os municípios</option>';
     dd_ALL.forEach(m=>{
       const o = document.createElement('option');
       o.value = String(m.seq); o.textContent = m.seq + '. ' + m.mun;
-      // Negrito apenas para municípios (seq inteiro); distritos (ex: "20.1") ficam normais
-      const isMun = Number.isInteger(Number(m.seq));
-      if (isMun) { o.style.fontWeight = '700'; o.className = 'dd-opt-mun'; }
-      else       { o.style.fontWeight = '400'; o.className = 'dd-opt-dist'; }
       s.appendChild(o);
     });
+    // Popula dropdown custom
+    let html = '<div class="dd-mun-cs-search"><input type="text" id="dd-msel-q" placeholder="Filtrar..." oninput="filterMunSel(this.value)"></div>';
+    html += '<div class="dd-mun-cs-opt is-mun" data-seq="">Todos os municípios</div>';
+    dd_ALL.forEach(m=>{
+      const isMun = Number.isInteger(Number(m.seq));
+      const cls = isMun ? 'is-mun' : 'is-dist';
+      html += '<div class="dd-mun-cs-opt ' + cls + '" data-seq="' + m.seq + '">' + m.seq + '. ' + m.mun + '</div>';
+    });
+    panel.innerHTML = html;
+    panel.querySelectorAll('.dd-mun-cs-opt').forEach(el => {
+      el.addEventListener('click', () => selectMunOpt(el.dataset.seq, el.textContent));
+    });
+    updateMunBtnLabel(s.value);
   }
+
+  function updateMunBtnLabel(seqVal){
+    const btn = document.getElementById('dd-msel-btn');
+    if (!btn) return;
+    if (!seqVal) { btn.textContent = 'Todos os municípios'; btn.style.fontWeight = '400'; return; }
+    const m = dd_ALL.find(x => String(x.seq) === String(seqVal));
+    if (m) {
+      btn.textContent = m.seq + '. ' + m.mun;
+      btn.style.fontWeight = Number.isInteger(Number(m.seq)) ? '700' : '400';
+    } else {
+      btn.textContent = seqVal;
+    }
+  }
+
+  function selectMunOpt(seq, label){
+    const s = document.getElementById('dd-msel');
+    if (s) { s.value = seq || ''; s.dispatchEvent(new Event('change', { bubbles: true })); }
+    updateMunBtnLabel(seq);
+    document.getElementById('dd-msel-panel').classList.remove('open');
+  }
+
+  window.filterMunSel = function(q){
+    q = (q || '').toLowerCase().trim();
+    document.querySelectorAll('#dd-msel-panel .dd-mun-cs-opt').forEach(el => {
+      if (!q) { el.style.display = ''; return; }
+      el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  };
+
+  // Abrir/fechar dropdown custom
+  document.addEventListener('click', (ev) => {
+    const cs = document.getElementById('dd-msel-cs');
+    if (!cs) return;
+    const btn = document.getElementById('dd-msel-btn');
+    const panel = document.getElementById('dd-msel-panel');
+    if (ev.target === btn) {
+      panel.classList.toggle('open');
+      if (panel.classList.contains('open')) {
+        const q = document.getElementById('dd-msel-q');
+        if (q) { q.value = ''; window.filterMunSel(''); setTimeout(()=>q.focus(), 50); }
+      }
+    } else if (!cs.contains(ev.target)) {
+      panel.classList.remove('open');
+    }
+  });
 
   function buildHTML(){
     return `
@@ -1203,6 +1275,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
               dd_curMun = m.mun;
               dd_curSeq = String(m.seq);
               const sel = document.getElementById('dd-msel'); if (sel) sel.value = String(m.seq);
+              if (typeof updateMunBtnLabel === 'function') updateMunBtnLabel(String(m.seq));
               applyF();
               zoomToMun(m.mun);
             }
@@ -1251,7 +1324,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
       });
     });
     const rbtn = document.getElementById('dd-resetZoomBtn');
-    if (rbtn) rbtn.addEventListener('click',()=>{ dd_curMun=''; dd_curSeq=''; const s=document.getElementById('dd-msel'); if(s)s.value=''; applyF(); resetZoom(); });
+    if (rbtn) rbtn.addEventListener('click',()=>{ dd_curMun=''; dd_curSeq=''; const s=document.getElementById('dd-msel'); if(s)s.value=''; if(typeof updateMunBtnLabel==='function')updateMunBtnLabel(''); applyF(); resetZoom(); });
     const cprev = document.getElementById('dd-cal-prev');
     const cnext = document.getElementById('dd-cal-next');
     if (cprev) cprev.addEventListener('click',()=>onCalNav(-1));
@@ -1837,6 +1910,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     if (clrBtn) clrBtn.addEventListener('click', ()=>{
       dd_curMun=''; dd_curSeq=''; dd_curSt='all';
       const s=document.getElementById('dd-msel'); if(s)s.value='';
+      if(typeof updateMunBtnLabel==='function')updateMunBtnLabel('');
       document.querySelectorAll('#tab-diretoria [data-ddchip]').forEach(c=>c.classList.remove('on'));
       const all=document.querySelector('#tab-diretoria [data-ddchip="all"]'); if(all)all.classList.add('on');
       applyF(); resetZoom();
