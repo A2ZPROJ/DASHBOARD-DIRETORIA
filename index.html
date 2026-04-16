@@ -84,6 +84,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;}
     #tab-diretoria .dd-mun-cs-opt:hover,#tab-diretoria .dd-mun-cs-opt.hl{background:var(--dd-tbl-hv);}
     #tab-diretoria .dd-mun-cs-opt.is-mun{font-weight:700;}
     #tab-diretoria .dd-mun-cs-opt.is-dist{font-weight:400;padding-left:24px;font-size:11px;color:var(--dd-mu);}
+    /* Modo escuro: adiciona background pros nomes de município pra destacar o negrito */
+    #tab-diretoria .dd-mun-cs-opt.is-mun{background:rgba(88,166,255,.12);}
+    #tab-diretoria .dd-mun-cs-opt.is-mun:hover{background:rgba(88,166,255,.22);}
+    [data-theme="light"] #tab-diretoria .dd-mun-cs-opt.is-mun{background:transparent;}
+    [data-theme="light"] #tab-diretoria .dd-mun-cs-opt.is-mun:hover{background:var(--dd-tbl-hv);}
     #tab-diretoria .dd-mun-cs-search{position:sticky;top:0;background:var(--dd-sel-bg);padding:6px;border-bottom:1px solid var(--dd-bd2);}
     #tab-diretoria .dd-mun-cs-search input{width:100%;padding:4px 8px;font-size:11px;background:var(--dd-bg);border:1px solid var(--dd-bd2);color:var(--dd-tx);border-radius:4px;outline:none;}
     #tab-diretoria .dd-chips{display:flex;gap:5px;flex-wrap:wrap;}
